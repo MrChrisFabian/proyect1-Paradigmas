@@ -42,9 +42,11 @@
 (define (formula-a-numero formula)
   (cond
     [(null? formula) null?]
-    ;; Modificar la siguiente linea
-    [else formula]))
-
+    [(validar-sintaxis formula) (contador (car (last (last formula))) (last (last formula)) )]
+    [else (error "Ingrese una formula valida")]))
+;; Contador que funciona como auxiliar
+(define (contador ele lista)
+(foldl + 0 (map (lambda (x) 1) (filter (lambda (x) (eq? ele x)) lista))))
 ;; recorre la expresion y sustituye todos los numeros por formulas
 (define (sustituir-numeros expresion)
   (cond
