@@ -56,6 +56,7 @@
     ;; (probablemente te servira la funcion numero-a-formula)
     [else expresion]))
 
+
 ;; funcion para hacer reduccion beta
 ;; Ej: (L x _ (x x)) 2 ==> (2 2)
 ;; realiza 1 sola reduccion
@@ -115,3 +116,14 @@
 (trace evaluar)
 (trace imprimir)
 (trace leer)
+(define (aplana arbol)
+  (cond
+    [(null? arbol) '()]
+    [(pair? (car arbol)) (apendice (aplana (car arbol)) (aplana (cdr arbol)))]
+    [else (cons (car arbol) (aplana (cdr arbol)))]))
+; EJemplo: (aplana '(a b (c d (f g)) (h k l)))
+; unir dos listas al mismo nivel (apendice '(a b) '(c d))) => '(a b c d)
+(define (apendice a b)
+  (cond
+    [(null? a) b]
+    [(not (null? a)) (cons (car a) (apendice (cdr a) b))]))
