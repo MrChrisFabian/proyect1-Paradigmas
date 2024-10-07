@@ -3,10 +3,9 @@
 
 ;;Funcion principal: ejecuta esto para empezar
 ;; (Probablemente no hace falta modificar esta funcion)
-(define (inicio)
-  (cond
-    [(null? (imprimir (evaluar (validar-sintaxis (leer))))) null?]
-    [else inicio]))
+(define(inicio )
+  (cond [(null? (imprimir(evaluar(validar-sintaxis(leer)))))null]
+        [else inicio]))
 
 ;; funcion  encargada de validar la sintaxis de la expresion
 ;;
@@ -21,15 +20,31 @@
     ;; Si no coincide, retorna falso
     [else #f]))
 
+
 ;; funcion que dado un numero devuelve la formula de dado numero (solo positivos)
 ;; (ej: 1) por su formula (ej: (L f _ (L x _ (f x))) )
 ;;
-(define (numero-a-formula num)
+;; Convierte un número en su representación como fórmula lambda
+(define (numero-a-formula n)
   (cond
-    [(not (number? num)) null?]
-    ;; Modificar para que genere la formula para el
-    ;; numero dado
-    [else num]))
+    [(= n 0) '(L f _ (L x _ x))]  ; Representación de 0
+    [(> n 0) `(L f _ (L x _ ,(aplicar-fn n)))]))  ; Fórmula lambda para n positivo
+
+;; Aplica 'f' n veces en una expresión lambda
+(define (aplicar-fn n)
+  (if (= n 1)
+      'x
+      `(f ,(aplicar-fn (- n 1)))))
+
+
+
+
+
+
+
+
+
+
 
 ;; convierte la formula a un numero
 ;; Ej:
@@ -39,32 +54,47 @@
 ;;
 ;; (es la estructura que importa no el nombre de las variables!!)
 ;;
+
+
+
+;; Función principal que convierte la fórmula lambda en un número de Church
 (define (formula-a-numero formula)
   (cond
-    [(null? formula) null?]
-    [(validar-sintaxis formula) (contador (car (last (last formula))) (last (last formula)) )]
-    [else (error "Ingrese una formula valida")]))
-;; Contador que funciona como auxiliar
-(define (contador ele lista)
-(foldl + 0 (map (lambda (x) 1) (filter (lambda (x) (eq? ele x)) lista))))
+    [(null? formula) #f]  ; Si la fórmula es nula, retorna #f
+    [(validar-sintaxis formula) (contador-aplicaciones (cadddr formula))]  ; Valida la sintaxis y cuenta las aplicaciones de la función
+    [else ( print "Ingrese una fórmula válida")]))
+
+;; Función auxiliar que cuenta cuántas veces se aplica la función
+(define (contador-aplicaciones formula)
+  (cond
+    ;; Caso base: cuando llegamos a la variable (como 'x'), terminamos el conteo
+    [(or (empty? formula) (symbol? formula)) 0]
+    ;; Caso cuando tenemos una aplicación de `f` a algo
+    [(and (list? formula) (symbol? (car formula)) (equal? (car formula) 'f))
+     (+ 1 (contador-aplicaciones (cadr formula)))]  ;; Llamada recursiva al siguiente argumento
+    ;; Caso cuando tenemos una lista de aplicaciones (por ejemplo, `(f (f x))`)
+    [(list? (cadr formula))
+     (contador-aplicaciones (cadr  formula))]  ;; Procesamos la lista anidada
+    [else (list? (cdr formula))
+     (contador-aplicaciones (cdr  formula))]))
+
+
 ;; recorre la expresion y sustituye todos los numeros por formulas
 (define (sustituir-numeros expresion)
-  (cond
-    [(null? expresion) null?]
-    ;; Modificar la siguiente expresion para que sustituya
-    ;; cada numero (ej: 1) por su formula (ej: (L f _ (L x _ f x)) )
-    ;; (probablemente te servira la funcion numero-a-formula)
-    [else expresion]))
-
+	(cond [(null? expresion) null]
+	      ;; Modificar la siguiente expresion para que sustituya
+	      ;; cada numero (ej: 1) por su formula (ej: (L f _ (L x _ f x)) )
+	      ;; (probablemente te servira la funcion numero-a-formula)
+              [else expresion]))
 
 ;; funcion para hacer reduccion beta
 ;; Ej: (L x _ (x x)) 2 ==> (2 2)
 ;; realiza 1 sola reduccion
 (define (reduccion-beta expresion)
-  (cond
-    [(null? expresion) null?]
-    ;; Modificar para implementar reduccion beta de una expresion
-    [else expresion]))
+        (cond [(null? expresion) null]
+              ;; Modificar para implementar reduccion beta de una expresion
+              [else expresion]))
+
 
 ;; funcion encargada de evaluar la expresion y obtener un resultado
 ;; combina todas las funciones anteriores para sustituir, luego hacer reducciones
@@ -92,38 +122,24 @@
 ;;     (L y _ 2)
 ;;
 (define (evaluar expresion)
-  (cond
-    [(null? expresion) null?]
-    [else expresion]))
+	(cond [(null? expresion) null]
+              [else expresion]))
 
 ;;Funcion encargada de imprimir la expresion
 (define (imprimir expresion)
-  (cond
-    [(null? expresion) null?]
-    [else
-     print
-     expresion]))
+	(cond [ (null? expresion) null]
+		[else print expresion]))
 
 ;;funcion encargada de obtener datos del teclado
-(define (leer)
-  (read))
+(define (leer )
+	(read))
 
 ;;Funciones de depuracion
 ;;Habilite y deshabilite segun su necesidad
 (trace inicio)
-;;(trace validar)
+(trace validar-sintaxis)
 ;;(trace sustituir)
 (trace evaluar)
 (trace imprimir)
 (trace leer)
-(define (aplana arbol)
-  (cond
-    [(null? arbol) '()]
-    [(pair? (car arbol)) (apendice (aplana (car arbol)) (aplana (cdr arbol)))]
-    [else (cons (car arbol) (aplana (cdr arbol)))]))
-; EJemplo: (aplana '(a b (c d (f g)) (h k l)))
-; unir dos listas al mismo nivel (apendice '(a b) '(c d))) => '(a b c d)
-(define (apendice a b)
-  (cond
-    [(null? a) b]
-    [(not (null? a)) (cons (car a) (apendice (cdr a) b))]))
+
