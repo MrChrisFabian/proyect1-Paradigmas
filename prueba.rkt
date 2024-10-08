@@ -1,5 +1,15 @@
 #lang racket
 (require racket/trace)
+(define alias-list
+  '((SUMA . (L m _ (L n _ (L f _ (L x _ ((m f) ((n f) x)))))))
+    (MULT . (L m _ (L n _ (L f _ (m (n f))))))))
+
+(define (expandir-alias expresion)
+  (cond
+    [(symbol? expresion)
+     (let ([alias (assoc expresion alias-list)]) (if alias (cdr alias) expresion))]
+    [(list? expresion) (map expandir-alias expresion)]
+    [else expresion]))
 
 #| (define (numero-a-formula n)
      (if (= n 0)
@@ -112,7 +122,7 @@
 (trace sustituir)
 ;; Ejemplo
 
-(display (reduccion-beta '((L x _ (x x)) 2))) ;; Debería retornar (2 2)
+; (display (reduccion-beta '((L x _ (x x)) 2))) ;; Debería retornar (2 2)
 (newline)
 ; (display (reduccion-beta '((L x _ (L y _ (x y))) 3)))  ;; Debería retornar (L y _ (3 y))
 (newline)
@@ -120,33 +130,30 @@
 ;; Función para evaluar una expresión lambda
 ;; Función para evaluar una expresión lambda
 (define (evaluar expresion)
-  ;; Función auxiliar para manejar los pasos de evaluación
   (define (evaluar-aux expr paso)
     (cond
       ;; Si la expresión es nula, simplemente devolvemos null
       [(null? expr) null]
-
       ;; Realizar la sustitución de números y mostrar el paso
       [(number? expr)
-       (printf "~a    [sust-num]\n" (sustituir-numeros expr))
-       (evaluar-aux (sustituir-numeros expr) (add1 paso))]
-
+       (let ([sustituido (sustituir-numeros expr)])
+         (printf "~a    [sust-num]\n" sustituido)
+         (evaluar-aux sustituido (add1 paso)))]
       ;; Aplicar reducción beta si es necesario y mostrar el paso
       [(and (list? expr) (list? (car expr)) (equal? (caar expr) 'L))
-       (printf "~a    [red-beta]\n" (reduccion-beta expr))
-       (evaluar-aux (reduccion-beta expr) (add1 paso))]
-
+       (let ([reducido (reduccion-beta expr)])
+         (printf "~a    [red-beta]\n" reducido)
+         (evaluar-aux reducido (add1 paso)))]
       ;; Continuar evaluando cualquier lista de expresiones
       [(list? expr) (map (lambda (x) (evaluar-aux x paso)) expr)]
-
       ;; Devolver la expresión si es un símbolo o algo irreductible
       [else expr]))
-
   ;; Iniciar la evaluación desde el paso 1
-  (evaluar-aux expresion 1))
-
+  (evaluar-aux (expandir-alias expresion) 1))
 ;; Ejemplo
-(display (evaluar '(((L x _ (L y _ (x y))) 1) 2)))
+; (display (evaluar '(((L x _ (L y _ (x y))) 1) 2)))
+(newline)
+(display (evaluar '((SUMA 1) 2) ))
 (newline)
 
 (trace contador-aplicaciones)
