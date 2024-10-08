@@ -120,23 +120,28 @@
 (newline)
 
 ;; Función para evaluar una expresión lambda
+;; Función para evaluar una expresión lambda
 (define (evaluar expresion)
+  ;; Función auxiliar para manejar los pasos de evaluación
   (define (evaluar-aux expr paso)
     (cond
       ;; Si la expresión es nula, simplemente devolvemos null
       [(null? expr) null]
+
       ;; Realizar la sustitución de números y mostrar el paso
       [(number? expr)
-       (let ([sustituido (sustituir-numeros expr)])
-         (printf "~a    [sust-num]\n" sustituido)
-         (evaluar-aux sustituido (add1 paso)))]
+       (printf "~a    [sust-num]\n" (sustituir-numeros expr))
+       (evaluar-aux (sustituir-numeros expr) (add1 paso))]
+
       ;; Aplicar reducción beta si es necesario y mostrar el paso
       [(and (list? expr) (list? (car expr)) (equal? (caar expr) 'L))
-       (let ([reducido (reduccion-beta expr)])
-         (printf "~a    [red-beta]\n" reducido)
-         (evaluar-aux reducido (add1 paso)))]
+       (printf "~a    [red-beta]\n" (reduccion-beta expr))
+       (evaluar-aux (reduccion-beta expr) (add1 paso))]
+
       ;; Continuar evaluando cualquier lista de expresiones
-      [(list? expr) (let ([evaluado (map (lambda (x) (evaluar-aux x paso)) expr)]) evaluado)]
+      [(list? expr)
+       (map (lambda (x) (evaluar-aux x paso)) expr)]
+
       ;; Devolver la expresión si es un símbolo o algo irreductible
       [else expr]))
 
