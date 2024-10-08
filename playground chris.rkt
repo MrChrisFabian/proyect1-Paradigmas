@@ -194,8 +194,18 @@
 ;; iszero en términos de cálculo lambda
 (define ISZERO '(L n _ ((n (L x _ FALSE)) TRUE)))
 (define SUMA '(L m _ (L n _ (L f _ (L x _ n f (m f x))))))
+(define IFTHENELSE '(L p _ (L a _ (L b _ ((p a) b)))))
 
 
 ;; Evaluar ISZERO en números de Church
 (define (evaluar-iszero n)
   (evaluar `(,ISZERO ,(numero-a-formula n))))
+
+
+;; Evaluar IFTHENELSE con TRUE, 'a y 'b
+(define (evaluar-ifthenelse cond a b)
+  (evaluar `(,IFTHENELSE ,cond ,a ,b)))
+
+;; Prueba con TRUE, a y b
+(evaluar-ifthenelse TRUE '("a") '("b")) 
+
