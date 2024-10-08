@@ -1,8 +1,6 @@
 #lang racket
 (require racket/trace)
-(define alias-list
-  '((SUMA . (L m _ (L n _ (L f _ (L x _ ((m f) ((n f) x)))))))
-    (MULT . (L m _ (L n _ (L f _ (m (n f))))))))
+(define alias-list '((SUMA . (L m _ (L n _ (L f _ (L x _ ((m f) ((n f) x)))))))))
 
 (define (expandir-alias expresion)
   (cond
@@ -63,15 +61,15 @@
     ;; Si no coincide, retorna falso
     [else #f]))
 
-;; Ejemplos de uso
-(display (formula-a-numero '(L f _ (L x _ (f x))))) ;; Debería devolver 1
-(newline)
-(display (formula-a-numero '(L f _ (L x _ (f (f x)))))) ;; Debería devolver 2
-(newline)
-(display (formula-a-numero '(L f _ (L x _ (f (f (f x))))))) ;; Debería devolver 3
-(newline)
-(display (formula-a-numero '(L f _ (L x _ (f (f x)))))) ;; Debería devolver 2
-(newline)
+; ;; Ejemplos de uso
+; (display (formula-a-numero '(L f _ (L x _ (f x))))) ;; Debería devolver 1
+; (newline)
+; (display (formula-a-numero '(L f _ (L x _ (f (f x)))))) ;; Debería devolver 2
+; (newline)
+; (display (formula-a-numero '(L f _ (L x _ (f (f (f x))))))) ;; Debería devolver 3
+; (newline)
+; (display (formula-a-numero '(L f _ (L x _ (f (f x)))))) ;; Debería devolver 2
+; (newline)
 
 ;; Convierte un número en su representación como fórmula lambda
 (define (numero-a-formula n)
@@ -117,9 +115,6 @@
     ;; Caso recursivo: si es una lista, procesamos cada elemento
     [(list? expresion) (map reduccion-beta expresion)]
     [else expresion])) ;; Si no es una lista, devolvemos la expresión tal cual
-(trace reduccion-beta)
-(trace validar-sintaxis)
-(trace sustituir)
 ;; Ejemplo
 
 ; (display (reduccion-beta '((L x _ (x x)) 2))) ;; Debería retornar (2 2)
@@ -136,14 +131,12 @@
       [(null? expr) null]
       ;; Realizar la sustitución de números y mostrar el paso
       [(number? expr)
-       (let ([sustituido (sustituir-numeros expr)])
-         (printf "~a    [sust-num]\n" sustituido)
-         (evaluar-aux sustituido (add1 paso)))]
+       (printf "~a    [sust-num]\n" (sustituir-numeros expr))
+       (evaluar-aux (sustituir-numeros expr) (add1 paso))]
       ;; Aplicar reducción beta si es necesario y mostrar el paso
       [(and (list? expr) (list? (car expr)) (equal? (caar expr) 'L))
-       (let ([reducido (reduccion-beta expr)])
-         (printf "~a    [red-beta]\n" reducido)
-         (evaluar-aux reducido (add1 paso)))]
+       (printf "~a    [red-beta]\n" (reduccion-beta expr))
+       (evaluar-aux (reduccion-beta expr) (add1 paso))]
       ;; Continuar evaluando cualquier lista de expresiones
       [(list? expr) (map (lambda (x) (evaluar-aux x paso)) expr)]
       ;; Devolver la expresión si es un símbolo o algo irreductible
@@ -153,9 +146,34 @@
 ;; Ejemplo
 ; (display (evaluar '(((L x _ (L y _ (x y))) 1) 2)))
 (newline)
-(display (evaluar '((SUMA 1) 2) ))
+; (display (evaluar '((SUMA 1) 2)))
 (newline)
+; (evaluar '(((L m _ ( L n _ f x n f m f x)) 1) 2))
+; '(((L m  ( L n  f x n f m f x)) 1) 2)
+; '(((L mnfx _ nf(mfx))1)2)
+; (evaluar '(((L mnfx _ nf(mfx))1)2))
+; '(L m _ (L n _ (L f _ (L x _ n f( m f x)))))
 
-(trace contador-aplicaciones)
-(trace formula-a-numero)
-(trace validar-sintaxis)
+(reduccion-beta '((L m _ (L n _ (L f _ (L x _ n f ( m f x)))))1))
+; resultado de (L n _ (L f _ (L x _ n f (1 f x))))
+(reduccion-beta '((L n _ (L f _ (L x _ n f (1 f x))))2))
+;resultado de '(L f _ (L x _ 2 f (1 f x)))
+(sustituir-numeros '(L f _ (L x _ 2 f (1 f x))))
+; resultado de '(L f _ (L x _ (L f _ (L x _ (f (f x)))) f ((L f _ (L x _ (f x))) f x)))
+(evaluar '(L f _ (L x _ (L f _ (L x _ (f (f x)))) f (((L f _ (L x _ (f x))) f ) x ))))
+;resultado '(L f _ (L x _ (L f _ (L x _ (f (f x)))) f ((L x _ (f x)) x)))
+(reduccion-beta '(L f _ (L x _ (L f _ (L x _ (f (f x)))) f ((L x _ (f x)) x))))
+; resultado '(L f _ (L x _ (L f _ (L x _ (f (f x)))) f (f x)))
+(reduccion-beta '(L f _ (L x _ ((L f _ (L x _ (f (f x)))) f )(f x))))
+; resultado '(L f _ (L x _ (L x _ (f (f x))) (f x)))
+(reduccion-beta '(L f _ (L x _ ((L x _ (f (f x))) (f x)))))
+; resultado '(L f _ (L x _ (f (f (f x))))) Wiii
+
+; (evaluar '(((L m _ (L n _ (L f _ (L x _ n f( m f x)))))1)2))
+; (evaluar '(((L xy _ (xy))1)2))
+(trace evaluar)
+(trace reduccion-beta)
+(define (ultimo lista)
+  (cond
+    [(null? (cdr lista)) (car lista)]
+    [else (ultimo (cdr lista))]))
