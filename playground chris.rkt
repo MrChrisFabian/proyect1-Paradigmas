@@ -1,6 +1,6 @@
 #lang racket
 (require racket/trace)
-(define alias-list '((SUMA . (L m _ (L n _ (L f _ (L x _ ((m f) ((n f) x )))))))))
+(define alias-list '((SUMA . (L m _ (L n _ (L f _ (L x _ ((m f) ((n f) x)))))))))
 
 (define (expandir-alias expresion)
   (cond
@@ -8,23 +8,6 @@
      (let ([alias (assoc expresion alias-list)]) (if alias (cdr alias) expresion))]
     [(list? expresion) (map expandir-alias expresion)]
     [else expresion]))
-
-#| (define (numero-a-formula n)
-     (if (= n 0)
-         '(x)  ; 0 es la función que devuelve x
-         `(L fx _ (f ,(numero-a-formula (- n 1)))))) ; n es L f _ (L x _ (f (n-1)))
-
-   ;; Ejemplos de uso
-   (display (numero-a-formula 0))  ;; => '(L f _ (L x _ x))
-   (newline)
-   (display (numero-a-formula 1))  ;; => '(L f _ (L x _ (f x)))
-   (newline)
-   (display (numero-a-formula 2))  ;; => '(L f _ (L x _ (f (f x))))
-   (newline)'(L f _ (L x _ (f (f x))))
-   (display (numero-a-formula 3))  ;; => '(L f _ (L x _ (f (f (f x)))))
-   (newline)
-
- |#
 
 ;; Función principal que convierte la fórmula lambda en un número de Church
 (define (formula-a-numero formula)
@@ -117,33 +100,63 @@
     [else expresion])) ;; Si no es una lista, devolvemos la expresión tal cual
 ;; Ejemplo
 
-; (display (reduccion-beta '((L x _ (x x)) 2))) ;; Debería retornar (2 2)
-(newline)
-; (display (reduccion-beta '((L x _ (L y _ (x y))) 3)))  ;; Debería retornar (L y _ (3 y))
-(newline)
+; ; (display (reduccion-beta '((L x _ (x x)) 2))) ;; Debería retornar (2 2)
+; (newline)
+; ; (display (reduccion-beta '((L x _ (L y _ (x y))) 3)))  ;; Debería retornar (L y _ (3 y))
+; (newline)
+
+(define (puedeB? expresion)
+  (and (list? expresion) (list? (car expresion)) (equal? (caar expresion) 'L)))
+(define (ultimo lista)
+  (cond
+    [(null? (cdr lista)) (car lista)]
+    [else (ultimo (cdr lista))]))
 
 ;; Función para evaluar una expresión lambda
 (define (evaluar expresion)
-  (define (evaluar-aux expr paso)
+  (define (evaluar-aux expr)
     (cond
-      ;; Si la expresión es nula, devolvemos null
-      [(null? expr) null]
-      ;; Si la expresión es un número, realizamos la sustitución y mostramos el paso
-      [(number? expr)
-       (printf "~a    [sust-num]\n" (sustituir-numeros expr))
-       (evaluar-aux (sustituir-numeros expr) (add1 paso))]
-      ;; Aplicar reducción beta si es necesario y mostrar el paso
-      [(and (list? expr) (list? (car expr)) (equal? (caar expr) 'L))
-       (printf "~a    [red-beta]\n" (reduccion-beta expr))
-       (evaluar-aux (reduccion-beta expr) (add1 paso))]
-      ;; Continuar evaluando cualquier lista de expresiones
-      [(list? expr)
-       (map (lambda (x) (evaluar-aux x paso)) expr)]
       ;; Devolver la expresión si es irreductible
-      [else expr]))
+      [(null? expr) null]
 
-  ;; Iniciar la evaluación desde el paso 1
-  (evaluar-aux expresion 1))
+      ;; Aplicamos reduccion beta si se puede
+      [else
+       (if (equal? expr (reduccion-beta expr))
+           
+           (if (and (not (puedeB? (sustituir-numeros expr))) (not (equal? expr (sustituir-numeros expr)))) 
+           
+                (evaluar-aux (sustituir-numeros expr))
+               
+               expr )
+           
+           (evaluar-aux (reduccion-beta expr)))]))
+
+  (trace evaluar-aux)
+  (cond
+    [(null? expresion) null]
+    [else (evaluar-aux expresion)]))
+(trace evaluar)
+; (define (evaluar expresion)
+;   (define (evaluar-aux expr paso)
+;     (cond
+;       ;; Si la expresión es nula, devolvemos null
+;       [(null? expr) null]
+;       ;; Si la expresión es un número, realizamos la sustitución y mostramos el paso
+;       [(number? expr)
+;        (printf "~a    [sust-num]\n" (sustituir-numeros expr))
+;        (evaluar-aux (sustituir-numeros expr) (add1 paso))]
+;       ;; Aplicar reducción beta si es necesario y mostrar el paso
+;       [(and (list? expr) (list? (car expr)) (equal? (caar expr) 'L))
+;        (printf "~a    [red-beta]\n" (reduccion-beta expr))
+;        (evaluar-aux (reduccion-beta expr) (add1 paso))]
+;       ;; Continuar evaluando cualquier lista de expresiones
+;       [(list? expr)
+;        (map (lambda (x) (evaluar-aux x paso)) expr)]
+;       ;; Devolver la expresión si es irreductible
+;       [else expr]))
+
+;   ;; Iniciar la evaluación desde el paso 1
+;   (evaluar-aux expresion 1))
 
 ; (display (evaluar '(((L x _ (L y _ (x y))) 1) 2)))
 (newline)
@@ -170,12 +183,19 @@
 ; (reduccion-beta '(L f _ (L x _ ((L x _ (f (f x))) (f x)))))
 ; ; resultado '(L f _ (L x _ (f (f (f x))))) Wiii
 
-
 ; (evaluar '(((L m _ (L n _ (L f _ (L x _ n f( m f x)))))1)2))
 ; (evaluar '(((L xy _ (xy))1)2))
-(trace evaluar)
-(trace reduccion-beta)
-(define (ultimo lista)
-  (cond
-    [(null? (cdr lista)) (car lista)]
-    [else (ultimo (cdr lista))]))
+; (evaluar '((L b _ (L e _ (e b)))(2)2))
+
+;; Definimos los valores booleanos
+(define TRUE '(L x _ (L y _ x)))
+(define FALSE '(L x _ (L y _ y)))
+
+;; iszero en términos de cálculo lambda
+(define ISZERO '(L n _ ((n (L x _ FALSE)) TRUE)))
+(define SUMA '(L m _ (L n _ (L f _ (L x _ n f (m f x))))))
+
+
+;; Evaluar ISZERO en números de Church
+(define (evaluar-iszero n)
+  (evaluar `(,ISZERO ,(numero-a-formula n))))
