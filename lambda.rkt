@@ -54,9 +54,6 @@
 ;;
 ;; (es la estructura que importa no el nombre de las variables!!)
 ;;
-
-
-
 ;; Función principal que convierte la fórmula lambda en un número de Church
 (define (formula-a-numero formula)
   (cond
@@ -72,7 +69,7 @@
     ;; Caso cuando tenemos una aplicación de `f` a algo
     [(and (list? formula) (symbol? (car formula)) (equal? (car formula) 'f))
      (+ 1 (contador-aplicaciones (cadr formula)))]  ;; Llamada recursiva al siguiente argumento
-    ;; Caso cuando tenemos una lista de aplicaciones (por ejemplo, `(f (f x))`)
+    ;; Caso cuando tenemos una lista de aplicaciones 
     [(list? (cadr formula))
      (contador-aplicaciones (cadr  formula))]  ;; Procesamos la lista anidada
     [else (list? (cdr formula))
@@ -81,11 +78,13 @@
 
 ;; recorre la expresion y sustituye todos los numeros por formulas
 (define (sustituir-numeros expresion)
-	(cond [(null? expresion) null]
-	      ;; Modificar la siguiente expresion para que sustituya
-	      ;; cada numero (ej: 1) por su formula (ej: (L f _ (L x _ f x)) )
-	      ;; (probablemente te servira la funcion numero-a-formula)
-              [else expresion]))
+	     (cond
+       [(number? expresion) (numero-a-formula expresion)] ;; Si es un número, lo sustituimos
+       [(list? expresion) (map sustituir-numeros expresion)] ;; Si es una lista, aplicamos la función recursivamente 
+       [(null? expresion) null] ;; Si la expresión está vacía, retornamos null
+        [else expresion])) ;; Cualquier otra cosa queda igual
+
+             
 
 ;; funcion para hacer reduccion beta
 ;; Ej: (L x _ (x x)) 2 ==> (2 2)
@@ -120,10 +119,28 @@
 ;;
 ;; Pero devuelve:
 ;;     (L y _ 2)
-;;
+;; Función para evaluar una expresión lambda sin let
 (define (evaluar expresion)
-	(cond [(null? expresion) null]
-              [else expresion]))
+  (define (evaluar-aux expr paso)
+    (cond
+      ;; Si la expresión es nula, devolvemos null
+      [(null? expr) null]
+      ;; Si la expresión es un número, realizamos la sustitución y mostramos el paso
+      [(number? expr)
+       (printf "~a    [sust-num]\n" (sustituir-numeros expr))
+       (evaluar-aux (sustituir-numeros expr) (add1 paso))]
+      ;; Aplicar reducción beta si es necesario y mostrar el paso
+      [(and (list? expr) (list? (car expr)) (equal? (caar expr) 'L))
+       (printf "~a    [red-beta]\n" (reduccion-beta expr))
+       (evaluar-aux (reduccion-beta expr) (add1 paso))]
+      ;; Continuar evaluando cualquier lista de expresiones
+      [(list? expr)
+       (map (lambda (x) (evaluar-aux x paso)) expr)]
+      ;; Devolver la expresión si es irreductible
+      [else expr]))
+
+  ;; Iniciar la evaluación desde el paso 1
+  (evaluar-aux expresion 1))
 
 ;;Funcion encargada de imprimir la expresion
 (define (imprimir expresion)
