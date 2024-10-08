@@ -44,7 +44,8 @@
 ;; Valida la estructura básica de la fórmula lambda
 (define (validar-sintaxis expresion)
   ;; Define el patrón de la expresión regular
-(define patron "^\\(L [a-zA-Z][a-zA-Z0-9]* _ (\\(.*\\)|[0-9]+|[a-zA-Z])\\)$")  (cond
+  (define patron "^\\(L [a-zA-Z][a-zA-Z0-9]* _ (\\(.*\\)|[0-9]+|[a-zA-Z])\\)$")
+  (cond
     ;; Si la expresión es nula, retorna nulo
     [(null? expresion) null]
     ;; Convierte la expresión a una cadena y verifica si coincide con el patrón
@@ -75,12 +76,9 @@
 ;; Recorre la expresión y sustituye números por fórmulas lambda
 (define (sustituir-numeros expresion)
   (cond
-    [(validar-sintaxis expresion)
-     (cond
-       [(number? expresion) (numero-a-formula expresion)] ;; Si es un número, lo sustituimos
-       [(list? expresion)
-        (map sustituir-numeros expresion)] ;; Si es una lista, aplicamos la función recursivamente
-       )]
+    [(number? expresion) (numero-a-formula expresion)] ;; Si es un número, lo sustituimos
+    [(list? expresion)
+     (map sustituir-numeros expresion)] ;; Si es una lista, aplicamos la función recursivamente
     [(null? expresion) null] ;; Si la expresión está vacía, retornamos null
     [else expresion])) ;; Cualquier otra cosa queda igual
 
@@ -139,8 +137,7 @@
        (evaluar-aux (reduccion-beta expr) (add1 paso))]
 
       ;; Continuar evaluando cualquier lista de expresiones
-      [(list? expr)
-       (map (lambda (x) (evaluar-aux x paso)) expr)]
+      [(list? expr) (map (lambda (x) (evaluar-aux x paso)) expr)]
 
       ;; Devolver la expresión si es un símbolo o algo irreductible
       [else expr]))
@@ -149,7 +146,7 @@
   (evaluar-aux expresion 1))
 
 ;; Ejemplo
-; (display (evaluar '(((L x _ (L y _ (x y))) 1) 2)))
+(display (evaluar '(((L x _ (L y _ (x y))) 1) 2)))
 (newline)
 
 (trace contador-aplicaciones)
